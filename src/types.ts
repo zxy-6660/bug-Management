@@ -11,6 +11,7 @@ export type Bug = {
   remark: string | null
   attachments: Attachment[]
   sort_order: number
+  resolved: boolean
   created_at: string
 }
 
@@ -18,4 +19,6 @@ export type Bug = {
 export type BugPatch = {
   content?: string
   remark?: string | null
+  resolved?: boolean
+  sort_order?: number
 }

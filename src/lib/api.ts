@@ -1,11 +1,12 @@
 import { ATTACHMENT_BUCKET, MAX_FILE_SIZE, supabase } from './supabase'
 import type { Attachment, Bug, BugPatch } from '../types'
 
-/** 读取全部问题，按排序值升序（顶在上、新的默认在底部） */
+/** 读取全部问题：已解决置顶，组内按手动排序值升序 */
 export async function fetchBugs(): Promise<Bug[]> {
   const { data, error } = await supabase
     .from('bugs')
-    .select('id, content, remark, attachments, sort_order, created_at')
+    .select('id, content, remark, attachments, sort_order, resolved, created_at')
+    .order('resolved', { ascending: false })
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
 

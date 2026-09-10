@@ -19,6 +19,7 @@ type Props = {
   onRetry: () => void
   onDelete: (bug: Bug) => void
   onUpdate: (bug: Bug, patch: BugPatch) => Promise<boolean>
+  onToggleResolved: (bug: Bug) => void
   onReorder: (next: Bug[]) => void
 }
 
@@ -30,6 +31,7 @@ export default function BugList({
   onRetry,
   onDelete,
   onUpdate,
+  onToggleResolved,
   onReorder
 }: Props) {
   const sensors = useSensors(
@@ -87,6 +89,7 @@ export default function BugList({
                   bug={bug}
                   onDelete={onDelete}
                   onUpdate={onUpdate}
+                  onToggleResolved={onToggleResolved}
                   deleting={deletingId === bug.id}
                 />
               ))}

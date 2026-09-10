@@ -305,6 +305,68 @@ body {
 
 .bug-card {
   padding: 16px 18px;
+  position: relative;
+}
+
+/* 已解决：整卡标红提示 */
+.bug-card.resolved {
+  border-color: #fecaca;
+  background: #fff7f7;
+}
+
+.bug-card.resolved::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 14px;
+  bottom: 14px;
+  width: 4px;
+  border-radius: 999px;
+  background: var(--danger);
+}
+
+/* 卡片右上角工具行：已解决状态标签 + 按钮 */
+.bug-head {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.resolve-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: #fee2e2;
+  color: var(--danger);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.resolve-btn {
+  padding: 4px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.resolve-btn:hover:not(:disabled) {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.resolve-btn.on {
+  border-color: #fecaca;
+  color: var(--danger);
+  background: #fff;
 }
 
 .dragging {

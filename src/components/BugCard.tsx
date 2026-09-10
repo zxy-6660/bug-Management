@@ -9,10 +9,11 @@ type Props = {
   bug: Bug
   onDelete: (bug: Bug) => void
   onUpdate: (bug: Bug, patch: BugPatch) => Promise<boolean>
+  onToggleResolved: (bug: Bug) => void
   deleting: boolean
 }
 
-export default function BugCard({ bug, onDelete, onUpdate, deleting }: Props) {
+export default function BugCard({ bug, onDelete, onUpdate, onToggleResolved, deleting }: Props) {
   const [confirming, setConfirming] = useState(false)
   const [editing, setEditing] = useState(false)
   const [editingRemark, setEditingRemark] = useState(false)
@@ -72,10 +73,21 @@ export default function BugCard({ bug, onDelete, onUpdate, deleting }: Props) {
 
   return (
     <article
-      className={`card bug-card${isDragging ? ' dragging' : ''}`}
+      className={`card bug-card${isDragging ? ' dragging' : ''}${bug.resolved ? ' resolved' : ''}`}
       ref={setNodeRef}
       style={style}
     >
+      <div className="bug-head">
+        {bug.resolved && <span className="resolve-chip">✔ 已解决</span>}
+        <button
+          type="button"
+          className={bug.resolved ? 'resolve-btn on' : 'resolve-btn'}
+          onClick={() => onToggleResolved(bug)}
+          disabled={saving}
+        >
+          {bug.resolved ? '恢复未解决' : '已解决'}
+        </button>
+      </div>
       {editing ? (
         <textarea
           className="edit-area"
