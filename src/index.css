@@ -326,14 +326,6 @@ body {
 }
 
 /* 卡片右上角工具行：已解决状态标签 + 按钮 */
-.bug-head {
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-bottom: 10px;
-}
-
 .resolve-chip {
   display: inline-flex;
   align-items: center;
@@ -477,12 +469,37 @@ body {
 .bug-footer {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: space-between;
   gap: 12px;
   flex-wrap: wrap;
   margin-top: 14px;
   padding-top: 12px;
   border-top: 1px solid var(--border);
+}
+
+/* 已解决按钮区：位于卡片左下角 */
+.resolve-zone {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 排序手柄与描述文字同行，位于卡片左侧 */
+.bug-content-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.bug-content-row .drag-handle {
+  margin-top: 2px;
+  flex-shrink: 0;
+  cursor: grab;
+}
+
+.bug-content-col {
+  flex: 1;
+  min-width: 0;
 }
 
 .ghost-btn {

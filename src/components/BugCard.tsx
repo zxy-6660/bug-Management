@@ -77,18 +77,19 @@ export default function BugCard({ bug, onDelete, onUpdate, onToggleResolved, del
       ref={setNodeRef}
       style={style}
     >
-      <div className="bug-head">
-        {bug.resolved && <span className="resolve-chip">✔ 已解决</span>}
+      <div className="bug-content-row">
         <button
           type="button"
-          className={bug.resolved ? 'resolve-btn on' : 'resolve-btn'}
-          onClick={() => onToggleResolved(bug)}
-          disabled={saving}
+          className="drag-handle"
+          aria-label="拖动排序"
+          title="按住拖动调整顺序"
+          {...attributes}
+          {...listeners}
         >
-          {bug.resolved ? '恢复未解决' : '已解决'}
+          ≡
         </button>
-      </div>
-      {editing ? (
+        <div className="bug-content-col">
+        {editing ? (
         <textarea
           className="edit-area"
           rows={5}
@@ -127,6 +128,8 @@ export default function BugCard({ bug, onDelete, onUpdate, onToggleResolved, del
           </div>
         )
       )}
+        </div>
+      </div>
 
       {images.length > 0 && (
         <div className="thumb-grid">
@@ -159,6 +162,17 @@ export default function BugCard({ bug, onDelete, onUpdate, onToggleResolved, del
       )}
 
       <footer className="bug-footer">
+        <span className="resolve-zone">
+          {bug.resolved && <span className="resolve-chip">✔ 已解决</span>}
+          <button
+            type="button"
+            className={bug.resolved ? 'resolve-btn on' : 'resolve-btn'}
+            onClick={() => onToggleResolved(bug)}
+            disabled={saving}
+          >
+            {bug.resolved ? '恢复未解决' : '已解决'}
+          </button>
+        </span>
         {editing || editingRemark ? (
           <span className="action-group">
             <button
@@ -185,16 +199,6 @@ export default function BugCard({ bug, onDelete, onUpdate, onToggleResolved, del
           </span>
         ) : (
           <span className="action-group">
-            <button
-              type="button"
-              className="drag-handle"
-              aria-label="拖动排序"
-              title="按住拖动调整顺序"
-              {...attributes}
-              {...listeners}
-            >
-              ≡
-            </button>
             <button type="button" className="edit-btn" onClick={startEditContent}>
               编辑
             </button>
