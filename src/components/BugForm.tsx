@@ -130,7 +130,7 @@ export default function BugForm({ onCreated }: Props) {
           className="textarea"
           rows={6}
           maxLength={5000}
-          placeholder={'请描述遇到的问题，例如：\n1. 在哪个页面/功能\n2. 具体操作步骤\n3. 预期结果与实际结果\n\n截图可直接按 Ctrl+V 粘贴到本页'}
+          placeholder={'请描述遇到的问题\n\n\n\n\n截图可直接按 Ctrl+V 粘贴到本页'}
           value={content}
           onChange={(e) => setContent(e.target.value)}
           disabled={submitting}
