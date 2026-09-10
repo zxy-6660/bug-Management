@@ -437,7 +437,7 @@ body {
   cursor: not-allowed;
 }
 
-.confirm-group {
+.action-group {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -447,4 +447,64 @@ body {
 .confirm-text {
   font-size: 12px;
   color: var(--danger);
+}
+
+.edit-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.edit-btn:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.save-btn {
+  padding: 5px 14px;
+  border: 1px solid var(--primary);
+  border-radius: 8px;
+  background: var(--primary);
+  color: #fff;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.save-btn:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.save-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.edit-area {
+  width: 100%;
+  min-height: 104px;
+  padding: 10px 12px;
+  border: 1px solid var(--primary);
+  border-radius: 10px;
+  background: #fff;
+  color: inherit;
+  font: inherit;
+  resize: vertical;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.edit-area:focus {
+  outline: none;
+}
+
+.edit-area:disabled {
+  opacity: 0.6;
 }

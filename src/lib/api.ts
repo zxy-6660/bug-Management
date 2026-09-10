@@ -65,6 +65,22 @@ export async function createBug(content: string, files: File[]): Promise<void> {
   }
 }
 
+/**
+ * 修改问题描述。
+ * 加了 .select() 是为了确认真的更新到了行：RLS 拦截时 PostgREST 不会报错，
+ * 只会影响 0 行，不检查就会变成「提示成功但内容没变」。
+ */
+export async function updateBugContent(id: string, content: string): Promise<void> {
+  const { data, error } = await supabase
+    .from('bugs')
+    .update({ content: content.trim() })
+    .eq('id', id)
+    .select('id')
+
+  if (error) throw new Error(`保存失败：${error.message}`)
+  if (!data || data.length === 0) throw new Error('保存失败：记录不存在，或数据库缺少 update 策略')
+}
+
 /** 删除问题记录，并清理其附件 */
 export async function deleteBug(bug: Bug): Promise<void> {
   const { error } = await supabase.from('bugs').delete().eq('id', bug.id)

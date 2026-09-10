@@ -8,9 +8,10 @@ type Props = {
   deletingId: string | null
   onRetry: () => void
   onDelete: (bug: Bug) => void
+  onSave: (bug: Bug, content: string) => Promise<boolean>
 }
 
-export default function BugList({ bugs, loading, error, deletingId, onRetry, onDelete }: Props) {
+export default function BugList({ bugs, loading, error, deletingId, onRetry, onDelete, onSave }: Props) {
   return (
     <section className="list-section">
       <div className="list-header">
@@ -36,7 +37,13 @@ export default function BugList({ bugs, loading, error, deletingId, onRetry, onD
       {!loading &&
         !error &&
         bugs.map((bug) => (
-          <BugCard key={bug.id} bug={bug} onDelete={onDelete} deleting={deletingId === bug.id} />
+          <BugCard
+            key={bug.id}
+            bug={bug}
+            onDelete={onDelete}
+            onSave={onSave}
+            deleting={deletingId === bug.id}
+          />
         ))}
     </section>
   )

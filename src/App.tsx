@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import BugForm from './components/BugForm'
 import BugList from './components/BugList'
-import { deleteBug, fetchBugs } from './lib/api'
+import { deleteBug, fetchBugs, updateBugContent } from './lib/api'
 import type { Bug } from './types'
 
 export default function App() {
@@ -42,6 +42,18 @@ export default function App() {
     []
   )
 
+  const handleSave = useCallback(async (bug: Bug, content: string) => {
+    setError(null)
+    try {
+      await updateBugContent(bug.id, content)
+      setBugs((prev) => prev.map((b) => (b.id === bug.id ? { ...b, content: content.trim() } : b)))
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '保存失败')
+      return false
+    }
+  }, [])
+
   return (
     <div className="page">
       <header className="page-header">
@@ -60,6 +72,7 @@ export default function App() {
           deletingId={deletingId}
           onRetry={load}
           onDelete={handleDelete}
+          onSave={handleSave}
         />
       </main>
     </div>

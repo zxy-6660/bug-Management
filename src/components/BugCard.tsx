@@ -6,18 +6,56 @@ import type { Bug } from '../types'
 type Props = {
   bug: Bug
   onDelete: (bug: Bug) => void
+  onSave: (bug: Bug, content: string) => Promise<boolean>
   deleting: boolean
 }
 
-export default function BugCard({ bug, onDelete, deleting }: Props) {
+export default function BugCard({ bug, onDelete, onSave, deleting }: Props) {
   const [confirming, setConfirming] = useState(false)
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(bug.content)
+  const [saving, setSaving] = useState(false)
+
   const attachments = bug.attachments ?? []
   const images = attachments.filter((a) => a.type.startsWith('image/'))
   const others = attachments.filter((a) => !a.type.startsWith('image/'))
+  const draftChanged = draft.trim() !== '' && draft.trim() !== bug.content
+
+  function startEdit() {
+    setDraft(bug.content)
+    setEditing(true)
+  }
+
+  function cancelEdit() {
+    setDraft(bug.content)
+    setEditing(false)
+  }
+
+  async function saveEdit() {
+    setSaving(true)
+    const ok = await onSave(bug, draft)
+    setSaving(false)
+    if (ok) setEditing(false)
+  }
 
   return (
     <article className="card bug-card">
-      <p className="bug-content">{bug.content}</p>
+      {editing ? (
+        <textarea
+          className="edit-area"
+          rows={5}
+          maxLength={5000}
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') cancelEdit()
+          }}
+          disabled={saving}
+          autoFocus
+        />
+      ) : (
+        <p className="bug-content">{bug.content}</p>
+      )}
 
       {images.length > 0 && (
         <div className="thumb-grid">
@@ -54,15 +92,24 @@ export default function BugCard({ bug, onDelete, deleting }: Props) {
           {formatTime(bug.created_at)}
         </time>
 
-        {confirming ? (
-          <span className="confirm-group">
-            <span className="confirm-text">确认删除？不可恢复</span>
+        {editing ? (
+          <span className="action-group">
             <button
               type="button"
-              className="danger-btn"
-              onClick={() => onDelete(bug)}
-              disabled={deleting}
+              className="save-btn"
+              onClick={saveEdit}
+              disabled={saving || !draftChanged}
             >
+              {saving ? '保存中…' : '保存'}
+            </button>
+            <button type="button" className="ghost-btn" onClick={cancelEdit} disabled={saving}>
+              取消
+            </button>
+          </span>
+        ) : confirming ? (
+          <span className="action-group">
+            <span className="confirm-text">确认删除？不可恢复</span>
+            <button type="button" className="danger-btn" onClick={() => onDelete(bug)} disabled={deleting}>
               {deleting ? '删除中…' : '确认删除'}
             </button>
             <button type="button" className="ghost-btn" onClick={() => setConfirming(false)} disabled={deleting}>
@@ -70,9 +117,14 @@ export default function BugCard({ bug, onDelete, deleting }: Props) {
             </button>
           </span>
         ) : (
-          <button type="button" className="ghost-btn" onClick={() => setConfirming(true)}>
-            删除
-          </button>
+          <span className="action-group">
+            <button type="button" className="edit-btn" onClick={startEdit}>
+              编辑
+            </button>
+            <button type="button" className="ghost-btn" onClick={() => setConfirming(true)}>
+              删除
+            </button>
+          </span>
         )}
       </footer>
     </article>

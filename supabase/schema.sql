@@ -17,7 +17,7 @@ create index if not exists bugs_created_at_idx on public.bugs (created_at desc);
 -- 2. 开启行级安全（RLS） ---------------------------------------
 alter table public.bugs enable row level security;
 
--- 3. 策略：匿名用户可读 / 可写 / 可删 ---------------------------
+-- 3. 策略：匿名用户可读 / 可写 / 可改 / 可删 ---------------------
 drop policy if exists "bugs_select_public" on public.bugs;
 create policy "bugs_select_public" on public.bugs
   for select to anon, authenticated
@@ -26,6 +26,12 @@ create policy "bugs_select_public" on public.bugs
 drop policy if exists "bugs_insert_public" on public.bugs;
 create policy "bugs_insert_public" on public.bugs
   for insert to anon, authenticated
+  with check (true);
+
+drop policy if exists "bugs_update_public" on public.bugs;
+create policy "bugs_update_public" on public.bugs
+  for update to anon, authenticated
+  using (true)
   with check (true);
 
 drop policy if exists "bugs_delete_public" on public.bugs;
