@@ -58,9 +58,6 @@ export default function App() {
     <div className="page">
       <header className="page-header">
         <h1>问题反馈工作台</h1>
-        <p className="subtitle">
-          无需登录，直接把工作中遇到的问题写在这里。问题解决后，任何人都可以删除对应记录。
-        </p>
       </header>
 
       <main className="layout">

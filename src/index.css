@@ -45,11 +45,6 @@ body {
   letter-spacing: -0.02em;
 }
 
-.subtitle {
-  margin: 0;
-  color: var(--text-muted);
-}
-
 .layout {
   display: grid;
   grid-template-columns: minmax(0, 420px) minmax(0, 1fr);
