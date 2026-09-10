@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { getAttachmentUrl } from '../lib/api'
-import { formatBytes, formatTime } from '../lib/format'
+import { formatBytes } from '../lib/format'
 import type { Bug, BugPatch } from '../types'
 
 type Props = {
@@ -134,10 +134,6 @@ export default function BugCard({ bug, onDelete, onUpdate, deleting }: Props) {
       )}
 
       <footer className="bug-footer">
-        <time className="bug-time" dateTime={bug.created_at}>
-          {formatTime(bug.created_at)}
-        </time>
-
         {editing || editingRemark ? (
           <span className="action-group">
             <button
