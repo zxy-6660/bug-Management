@@ -1,5 +1,5 @@
 import BugCard from './BugCard'
-import type { Bug } from '../types'
+import type { Bug, BugPatch } from '../types'
 
 type Props = {
   bugs: Bug[]
@@ -8,10 +8,10 @@ type Props = {
   deletingId: string | null
   onRetry: () => void
   onDelete: (bug: Bug) => void
-  onSave: (bug: Bug, content: string) => Promise<boolean>
+  onUpdate: (bug: Bug, patch: BugPatch) => Promise<boolean>
 }
 
-export default function BugList({ bugs, loading, error, deletingId, onRetry, onDelete, onSave }: Props) {
+export default function BugList({ bugs, loading, error, deletingId, onRetry, onDelete, onUpdate }: Props) {
   return (
     <section className="list-section">
       <div className="list-header">
@@ -41,7 +41,7 @@ export default function BugList({ bugs, loading, error, deletingId, onRetry, onD
             key={bug.id}
             bug={bug}
             onDelete={onDelete}
-            onSave={onSave}
+            onUpdate={onUpdate}
             deleting={deletingId === bug.id}
           />
         ))}

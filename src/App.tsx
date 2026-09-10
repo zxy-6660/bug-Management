@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useState } from 'react'
 import BugForm from './components/BugForm'
 import BugList from './components/BugList'
-import { deleteBug, fetchBugs, updateBugContent } from './lib/api'
-import type { Bug } from './types'
+import { deleteBug, fetchBugs, updateBug } from './lib/api'
+import type { Bug, BugPatch } from './types'
 
 export default function App() {
   const [bugs, setBugs] = useState<Bug[]>([])
@@ -42,11 +42,11 @@ export default function App() {
     []
   )
 
-  const handleSave = useCallback(async (bug: Bug, content: string) => {
+  const handleUpdate = useCallback(async (bug: Bug, patch: BugPatch) => {
     setError(null)
     try {
-      await updateBugContent(bug.id, content)
-      setBugs((prev) => prev.map((b) => (b.id === bug.id ? { ...b, content: content.trim() } : b)))
+      await updateBug(bug.id, patch)
+      setBugs((prev) => prev.map((b) => (b.id === bug.id ? { ...b, ...patch } : b)))
       return true
     } catch (err) {
       setError(err instanceof Error ? err.message : '保存失败')
@@ -72,7 +72,7 @@ export default function App() {
           deletingId={deletingId}
           onRetry={load}
           onDelete={handleDelete}
-          onSave={handleSave}
+          onUpdate={handleUpdate}
         />
       </main>
     </div>

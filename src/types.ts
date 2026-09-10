@@ -8,6 +8,13 @@ export type Attachment = {
 export type Bug = {
   id: string
   content: string
+  remark: string | null
   attachments: Attachment[]
   created_at: string
+}
+
+/** 可修改的字段 */
+export type BugPatch = {
+  content?: string
+  remark?: string | null
 }

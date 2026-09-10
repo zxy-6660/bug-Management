@@ -1,41 +1,64 @@
 import { useState } from 'react'
 import { getAttachmentUrl } from '../lib/api'
 import { formatBytes, formatTime } from '../lib/format'
-import type { Bug } from '../types'
+import type { Bug, BugPatch } from '../types'
 
 type Props = {
   bug: Bug
   onDelete: (bug: Bug) => void
-  onSave: (bug: Bug, content: string) => Promise<boolean>
+  onUpdate: (bug: Bug, patch: BugPatch) => Promise<boolean>
   deleting: boolean
 }
 
-export default function BugCard({ bug, onDelete, onSave, deleting }: Props) {
+export default function BugCard({ bug, onDelete, onUpdate, deleting }: Props) {
   const [confirming, setConfirming] = useState(false)
   const [editing, setEditing] = useState(false)
+  const [editingRemark, setEditingRemark] = useState(false)
   const [draft, setDraft] = useState(bug.content)
+  const [remarkDraft, setRemarkDraft] = useState(bug.remark ?? '')
   const [saving, setSaving] = useState(false)
 
   const attachments = bug.attachments ?? []
   const images = attachments.filter((a) => a.type.startsWith('image/'))
   const others = attachments.filter((a) => !a.type.startsWith('image/'))
-  const draftChanged = draft.trim() !== '' && draft.trim() !== bug.content
 
-  function startEdit() {
+  const contentChanged = draft.trim() !== '' && draft.trim() !== bug.content
+  const remarkChanged = remarkDraft.trim() !== (bug.remark ?? '')
+  const canSave = editing ? contentChanged : remarkChanged
+
+  function startEditContent() {
+    setEditingRemark(false)
     setDraft(bug.content)
     setEditing(true)
   }
 
-  function cancelEdit() {
-    setDraft(bug.content)
+  function startEditRemark() {
     setEditing(false)
+    setRemarkDraft(bug.remark ?? '')
+    setEditingRemark(true)
   }
 
-  async function saveEdit() {
+  function cancelEdit() {
+    setDraft(bug.content)
+    setRemarkDraft(bug.remark ?? '')
+    setEditing(false)
+    setEditingRemark(false)
+  }
+
+  async function saveContent() {
     setSaving(true)
-    const ok = await onSave(bug, draft)
+    const ok = await onUpdate(bug, { content: draft.trim() })
     setSaving(false)
     if (ok) setEditing(false)
+  }
+
+  async function saveRemark() {
+    const next = remarkDraft.trim()
+    setSaving(true)
+    // 清空备注时写回 null，避免库里出现空字符串
+    const ok = await onUpdate(bug, { remark: next === '' ? null : next })
+    setSaving(false)
+    if (ok) setEditingRemark(false)
   }
 
   return (
@@ -55,6 +78,29 @@ export default function BugCard({ bug, onDelete, onSave, deleting }: Props) {
         />
       ) : (
         <p className="bug-content">{bug.content}</p>
+      )}
+
+      {editingRemark ? (
+        <textarea
+          className="edit-area remark-area"
+          rows={3}
+          maxLength={2000}
+          placeholder="补充说明、处理进展、结论等"
+          value={remarkDraft}
+          onChange={(e) => setRemarkDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Escape') cancelEdit()
+          }}
+          disabled={saving}
+          autoFocus
+        />
+      ) : (
+        bug.remark && (
+          <div className="bug-remark">
+            <span className="bug-remark-label">备注</span>
+            {bug.remark}
+          </div>
+        )
       )}
 
       {images.length > 0 && (
@@ -92,13 +138,13 @@ export default function BugCard({ bug, onDelete, onSave, deleting }: Props) {
           {formatTime(bug.created_at)}
         </time>
 
-        {editing ? (
+        {editing || editingRemark ? (
           <span className="action-group">
             <button
               type="button"
               className="save-btn"
-              onClick={saveEdit}
-              disabled={saving || !draftChanged}
+              onClick={editing ? saveContent : saveRemark}
+              disabled={saving || !canSave}
             >
               {saving ? '保存中…' : '保存'}
             </button>
@@ -118,8 +164,11 @@ export default function BugCard({ bug, onDelete, onSave, deleting }: Props) {
           </span>
         ) : (
           <span className="action-group">
-            <button type="button" className="edit-btn" onClick={startEdit}>
+            <button type="button" className="edit-btn" onClick={startEditContent}>
               编辑
+            </button>
+            <button type="button" className="edit-btn" onClick={startEditRemark}>
+              {bug.remark ? '改备注' : '备注'}
             </button>
             <button type="button" className="ghost-btn" onClick={() => setConfirming(true)}>
               删除

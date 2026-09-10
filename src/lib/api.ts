@@ -1,12 +1,12 @@
 import { ATTACHMENT_BUCKET, MAX_FILE_SIZE, supabase } from './supabase'
-import type { Attachment, Bug } from '../types'
+import type { Attachment, Bug, BugPatch } from '../types'
 
-/** 读取全部问题，按提交时间倒序 */
+/** 读取全部问题，按提交时间正序（最新的在最下面） */
 export async function fetchBugs(): Promise<Bug[]> {
   const { data, error } = await supabase
     .from('bugs')
-    .select('id, content, attachments, created_at')
-    .order('created_at', { ascending: false })
+    .select('id, content, remark, attachments, created_at')
+    .order('created_at', { ascending: true })
 
   if (error) throw new Error(`加载失败：${error.message}`)
   return (data ?? []) as Bug[]
@@ -66,14 +66,14 @@ export async function createBug(content: string, files: File[]): Promise<void> {
 }
 
 /**
- * 修改问题描述。
+ * 修改问题描述或备注。
  * 加了 .select() 是为了确认真的更新到了行：RLS 拦截时 PostgREST 不会报错，
  * 只会影响 0 行，不检查就会变成「提示成功但内容没变」。
  */
-export async function updateBugContent(id: string, content: string): Promise<void> {
+export async function updateBug(id: string, patch: BugPatch): Promise<void> {
   const { data, error } = await supabase
     .from('bugs')
-    .update({ content: content.trim() })
+    .update(patch)
     .eq('id', id)
     .select('id')
 
