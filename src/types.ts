@@ -10,6 +10,7 @@ export type Bug = {
   content: string
   remark: string | null
   attachments: Attachment[]
+  sort_order: number
   created_at: string
 }
 

@@ -1,11 +1,12 @@
 import { ATTACHMENT_BUCKET, MAX_FILE_SIZE, supabase } from './supabase'
 import type { Attachment, Bug, BugPatch } from '../types'
 
-/** 读取全部问题，按提交时间正序（最新的在最下面） */
+/** 读取全部问题，按排序值升序（顶在上、新的默认在底部） */
 export async function fetchBugs(): Promise<Bug[]> {
   const { data, error } = await supabase
     .from('bugs')
-    .select('id, content, remark, attachments, created_at')
+    .select('id, content, remark, attachments, sort_order, created_at')
+    .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
 
   if (error) throw new Error(`加载失败：${error.message}`)
@@ -55,7 +56,7 @@ export async function createBug(content: string, files: File[]): Promise<void> {
 
   const { error } = await supabase
     .from('bugs')
-    .insert({ content: content.trim(), attachments })
+    .insert({ content: content.trim(), attachments, sort_order: await nextSortOrder() })
 
   if (error) {
     if (attachments.length > 0) {
@@ -63,6 +64,18 @@ export async function createBug(content: string, files: File[]): Promise<void> {
     }
     throw new Error(`提交失败：${error.message}`)
   }
+}
+
+/** 计算下一条应使用的排序值 = 当前最大值 + 1（保证新记录排在最后） */
+async function nextSortOrder(): Promise<number> {
+  const { data, error } = await supabase
+    .from('bugs')
+    .select('sort_order')
+    .order('sort_order', { ascending: false })
+    .limit(1)
+
+  if (error) throw new Error(`提交失败：${error.message}`)
+  return ((data && data[0]?.sort_order as number | undefined) ?? 0) + 1
 }
 
 /**
@@ -79,6 +92,22 @@ export async function updateBug(id: string, patch: BugPatch): Promise<void> {
 
   if (error) throw new Error(`保存失败：${error.message}`)
   if (!data || data.length === 0) throw new Error('保存失败：记录不存在，或数据库缺少 update 策略')
+}
+
+/**
+ * 批量重排整张列表的顺序。orders 形如 [{id, sort_order: 1}, ...]，
+ * 会按顺序把每条记录的 sort_order 改为其下标（从 1 开始）。
+ */
+export async function reorderBugs(orders: { id: string; sort_order: number }[]): Promise<void> {
+  // PostgREST 没有跨多条记录的批量 update，这里逐条更新。列表规模小（几十条内），可接受。
+  await Promise.all(
+    orders.map(({ id, sort_order }) =>
+      supabase.from('bugs').update({ sort_order }).eq('id', id).select('id').then((r) => {
+        if (r.error) throw new Error(`排序失败：${r.error.message}`)
+        if (!r.data || r.data.length === 0) throw new Error('排序失败：记录不存在，或数据库缺少 update 策略')
+      })
+    )
+  )
 }
 
 /** 删除问题记录，并清理其附件 */

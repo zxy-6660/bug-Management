@@ -1,3 +1,13 @@
+import {
+  DndContext,
+  PointerSensor,
+  TouchSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent
+} from '@dnd-kit/core'
+import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import BugCard from './BugCard'
 import type { Bug, BugPatch } from '../types'
 
@@ -9,9 +19,38 @@ type Props = {
   onRetry: () => void
   onDelete: (bug: Bug) => void
   onUpdate: (bug: Bug, patch: BugPatch) => Promise<boolean>
+  onReorder: (next: Bug[]) => void
 }
 
-export default function BugList({ bugs, loading, error, deletingId, onRetry, onDelete, onUpdate }: Props) {
+export default function BugList({
+  bugs,
+  loading,
+  error,
+  deletingId,
+  onRetry,
+  onDelete,
+  onUpdate,
+  onReorder
+}: Props) {
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 160, tolerance: 6 },
+      keyboardCoordinates: sortableKeyboardCoordinates
+    })
+  )
+
+  function handleDragEnd(event: DragEndEvent) {
+    const { active, over } = event
+    if (!over || active.id === over.id) return
+
+    const from = bugs.findIndex((b) => b.id === active.id)
+    const to = bugs.findIndex((b) => b.id === over.id)
+    if (from < 0 || to < 0) return
+
+    onReorder(arrayMove(bugs, from, to))
+  }
+
   return (
     <section className="list-section">
       <div className="list-header">
@@ -34,17 +73,27 @@ export default function BugList({ bugs, loading, error, deletingId, onRetry, onD
         <div className="card placeholder">暂时还没有问题反馈，使用左侧表单提交第一条吧。</div>
       )}
 
-      {!loading &&
-        !error &&
-        bugs.map((bug) => (
-          <BugCard
-            key={bug.id}
-            bug={bug}
-            onDelete={onDelete}
-            onUpdate={onUpdate}
-            deleting={deletingId === bug.id}
-          />
-        ))}
+      {!loading && !error && (
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
+        >
+          <SortableContext items={bugs.map((b) => b.id)} strategy={verticalListSortingStrategy}>
+            <div className="sortable-list">
+              {bugs.map((bug) => (
+                <BugCard
+                  key={bug.id}
+                  bug={bug}
+                  onDelete={onDelete}
+                  onUpdate={onUpdate}
+                  deleting={deletingId === bug.id}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
     </section>
   )
 }

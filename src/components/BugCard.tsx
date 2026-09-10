@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { useSortable } from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 import { getAttachmentUrl } from '../lib/api'
 import { formatBytes } from '../lib/format'
 import type { Bug, BugPatch } from '../types'
@@ -17,6 +19,13 @@ export default function BugCard({ bug, onDelete, onUpdate, deleting }: Props) {
   const [draft, setDraft] = useState(bug.content)
   const [remarkDraft, setRemarkDraft] = useState(bug.remark ?? '')
   const [saving, setSaving] = useState(false)
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: bug.id })
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition
+  }
 
   const attachments = bug.attachments ?? []
   const images = attachments.filter((a) => a.type.startsWith('image/'))
@@ -62,7 +71,11 @@ export default function BugCard({ bug, onDelete, onUpdate, deleting }: Props) {
   }
 
   return (
-    <article className="card bug-card">
+    <article
+      className={`card bug-card${isDragging ? ' dragging' : ''}`}
+      ref={setNodeRef}
+      style={style}
+    >
       {editing ? (
         <textarea
           className="edit-area"
@@ -160,6 +173,16 @@ export default function BugCard({ bug, onDelete, onUpdate, deleting }: Props) {
           </span>
         ) : (
           <span className="action-group">
+            <button
+              type="button"
+              className="drag-handle"
+              aria-label="拖动排序"
+              title="按住拖动调整顺序"
+              {...attributes}
+              {...listeners}
+            >
+              ≡
+            </button>
             <button type="button" className="edit-btn" onClick={startEditContent}>
               编辑
             </button>

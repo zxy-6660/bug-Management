@@ -10,13 +10,16 @@ create table if not exists public.bugs (
   content     text not null check (char_length(btrim(content)) > 0),
   remark      text,
   attachments jsonb not null default '[]'::jsonb,
+  sort_order  integer not null default 0,
   created_at  timestamptz not null default now()
 );
 
--- 增量升级：已存在的旧表补上备注字段
+-- 增量升级：已存在的旧表补上备注字段 / 排序字段
 alter table public.bugs add column if not exists remark text;
+alter table public.bugs add column if not exists sort_order integer not null default 0;
 
-create index if not exists bugs_created_at_idx on public.bugs (created_at desc);
+-- 排序索引：列表按 sort_order 升序展示
+create index if not exists bugs_sort_order_idx on public.bugs (sort_order asc);
 
 -- 2. 开启行级安全（RLS） ---------------------------------------
 alter table public.bugs enable row level security;

@@ -307,6 +307,41 @@ body {
   padding: 16px 18px;
 }
 
+.dragging {
+  opacity: 0.5;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.sortable-list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.drag-handle {
+  padding: 5px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: #fff;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 15px;
+  line-height: 1;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  transition: border-color 0.15s, color 0.15s;
+}
+
+.drag-handle:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+}
+
 .bug-content {
   margin: 0;
   white-space: pre-wrap;

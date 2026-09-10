@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import BugForm from './components/BugForm'
 import BugList from './components/BugList'
-import { deleteBug, fetchBugs, updateBug } from './lib/api'
+import { deleteBug, fetchBugs, reorderBugs, updateBug } from './lib/api'
 import type { Bug, BugPatch } from './types'
 
 export default function App() {
@@ -54,6 +54,21 @@ export default function App() {
     }
   }, [])
 
+  /** 拖拽结束后的新顺序：先本地更新 immediate，再持久化；失败则回滚 */
+  const handleReorder = useCallback(
+    (next: Bug[]) => {
+      const prev = bugs
+      // 按新顺序重写 sort_order 的本地副本
+      const renumbered = next.map((b, i) => ({ ...b, sort_order: i + 1 }))
+      setBugs(renumbered)
+      void reorderBugs(renumbered.map((b) => ({ id: b.id, sort_order: b.sort_order }))).catch((err) => {
+        setError(err instanceof Error ? err.message : '排序保存失败，已还原')
+        setBugs(prev)
+      })
+    },
+    [bugs]
+  )
+
   return (
     <div className="page">
       <header className="page-header">
@@ -70,6 +85,7 @@ export default function App() {
           onRetry={load}
           onDelete={handleDelete}
           onUpdate={handleUpdate}
+          onReorder={handleReorder}
         />
       </main>
     </div>
