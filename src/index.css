@@ -484,7 +484,7 @@ body {
   gap: 8px;
 }
 
-/* 排序手柄与描述文字同行，位于卡片左侧 */
+/* 排序手柄与描述文字同行，位于卡片右侧（右对齐） */
 .bug-content-row {
   display: flex;
   align-items: flex-start;

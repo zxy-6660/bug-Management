@@ -78,16 +78,6 @@ export default function BugCard({ bug, onDelete, onUpdate, onToggleResolved, del
       style={style}
     >
       <div className="bug-content-row">
-        <button
-          type="button"
-          className="drag-handle"
-          aria-label="拖动排序"
-          title="按住拖动调整顺序"
-          {...attributes}
-          {...listeners}
-        >
-          ≡
-        </button>
         <div className="bug-content-col">
         {editing ? (
         <textarea
@@ -129,6 +119,16 @@ export default function BugCard({ bug, onDelete, onUpdate, onToggleResolved, del
         )
       )}
         </div>
+        <button
+          type="button"
+          className="drag-handle"
+          aria-label="拖动排序"
+          title="按住拖动调整顺序"
+          {...attributes}
+          {...listeners}
+        >
+          ≡
+        </button>
       </div>
 
       {images.length > 0 && (
