@@ -12,10 +12,20 @@ export async function fetchBugs(): Promise<Bug[]> {
   return (data ?? []) as Bug[]
 }
 
-/** 清洗文件名，避免路径中出现特殊字符 */
+/**
+ * 生成符合 Storage 规范的路径名。
+ * Supabase Storage 的 key 只接受 ASCII 字符，中文等非 ASCII 字符会导致 Invalid key 错误，
+ * 因此这里统一转成 ASCII，原始文件名仍保存在数据库的 name 字段中用于展示。
+ */
 function sanitizeFileName(name: string) {
-  const cleaned = name.replace(/[^\w.\-\u4e00-\u9fa5]+/g, '_')
-  return cleaned.slice(-80) || 'file'
+  const extMatch = name.match(/\.[A-Za-z0-9]{1,10}$/)
+  const ext = extMatch ? extMatch[0].toLowerCase() : ''
+  const base = (ext ? name.slice(0, -ext.length) : name)
+    .replace(/[^A-Za-z0-9._-]+/g, '_')
+    .replace(/^[_.]+|[_.]+$/g, '')
+    .slice(0, 60)
+
+  return `${base || 'file'}${ext}`
 }
 
 /**
