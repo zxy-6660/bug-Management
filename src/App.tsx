@@ -1,26 +1,42 @@
 import { useCallback, useEffect, useState } from 'react'
 import BugForm from './components/BugForm'
 import BugList from './components/BugList'
-import { deleteBug, fetchBugs, reorderBugs, updateBug } from './lib/api'
-import type { Bug, BugPatch } from './types'
+import { createTab, deleteBug, fetchBugs, fetchTabs, reorderBugs, updateBug } from './lib/api'
+import type { Bug, BugPatch, Tab } from './types'
+
+export const MAX_TABS = 5
 
 export default function App() {
+  const [tabs, setTabs] = useState<Tab[]>([])
+  const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [bugs, setBugs] = useState<Bug[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
+  // 启动：加载标签页，并选中第一个
+  useEffect(() => {
+    fetchTabs()
+      .then((list) => {
+        setTabs(list)
+        if (list.length > 0) setActiveTabId(list[0].id)
+      })
+      .catch((err) => setError(err instanceof Error ? err.message : '加载标签页失败'))
+  }, [])
+
+  // 切换标签页时，加载对应页的问题
   const load = useCallback(async () => {
+    if (!activeTabId) return
     setLoading(true)
     setError(null)
     try {
-      setBugs(await fetchBugs())
+      setBugs(await fetchBugs(activeTabId))
     } catch (err) {
       setError(err instanceof Error ? err.message : '加载失败')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [activeTabId])
 
   useEffect(() => {
     void load()
@@ -58,7 +74,6 @@ export default function App() {
   const handleReorder = useCallback(
     (next: Bug[]) => {
       const prev = bugs
-      // 按新顺序重写 sort_order 的本地副本
       const renumbered = next.map((b, i) => ({ ...b, sort_order: i + 1 }))
       setBugs(renumbered)
       void reorderBugs(renumbered.map((b) => ({ id: b.id, sort_order: b.sort_order }))).catch((err) => {
@@ -73,7 +88,6 @@ export default function App() {
   const handleToggleResolved = useCallback(
     (bug: Bug) => {
       const nextResolved = !bug.resolved
-      // 标记已解决：sort_order 设为已解决组内最小值减 1，确保置顶到最前
       const nextSort = nextResolved
         ? Math.min(...bugs.filter((b) => b.resolved).map((b) => b.sort_order), 0) - 1
         : bug.sort_order
@@ -81,9 +95,7 @@ export default function App() {
       const patch: BugPatch = { resolved: nextResolved, sort_order: nextSort }
       void updateBug(bug.id, patch)
         .then(() => {
-          setBugs((prev) =>
-            prev.map((b) => (b.id === bug.id ? { ...b, ...patch } : b))
-          )
+          setBugs((prev) => prev.map((b) => (b.id === bug.id ? { ...b, ...patch } : b)))
         })
         .catch((err) => {
           setError(err instanceof Error ? err.message : '操作失败')
@@ -93,6 +105,20 @@ export default function App() {
     [bugs, load]
   )
 
+  /** 新增标签页（最多 5 个），默认命名「新标签页 N」 */
+  const handleCreateTab = useCallback(async () => {
+    if (tabs.length >= MAX_TABS) return
+    setError(null)
+    try {
+      const name = `新标签页 ${tabs.length + 1}`
+      const tab = await createTab(name)
+      setTabs((prev) => [...prev, tab])
+      setActiveTabId(tab.id)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '新增标签页失败')
+    }
+  }, [tabs.length])
+
   return (
     <div className="page">
       <header className="page-header">
@@ -100,12 +126,17 @@ export default function App() {
       </header>
 
       <main className="layout">
-        <BugForm onCreated={load} />
+        <BugForm onCreated={load} tabId={activeTabId} />
         <BugList
+          tabs={tabs}
+          activeTabId={activeTabId}
+          maxTabs={MAX_TABS}
           bugs={bugs}
           loading={loading}
           error={error}
           deletingId={deletingId}
+          onSelectTab={setActiveTabId}
+          onCreateTab={handleCreateTab}
           onRetry={load}
           onDelete={handleDelete}
           onUpdate={handleUpdate}

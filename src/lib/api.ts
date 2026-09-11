@@ -1,11 +1,36 @@
 import { ATTACHMENT_BUCKET, MAX_FILE_SIZE, supabase } from './supabase'
-import type { Attachment, Bug, BugPatch } from '../types'
+import type { Attachment, Bug, BugPatch, Tab } from '../types'
 
-/** 读取全部问题：已解决置顶，组内按手动排序值升序 */
-export async function fetchBugs(): Promise<Bug[]> {
+/** 读取全部标签页，按排序值升序 */
+export async function fetchTabs(): Promise<Tab[]> {
+  const { data, error } = await supabase
+    .from('tabs')
+    .select('id, name, sort_order, created_at')
+    .order('sort_order', { ascending: true })
+    .order('created_at', { ascending: true })
+
+  if (error) throw new Error(`加载标签页失败：${error.message}`)
+  return (data ?? []) as Tab[]
+}
+
+/** 新建一个标签页 */
+export async function createTab(name: string): Promise<Tab> {
+  const { data, error } = await supabase
+    .from('tabs')
+    .insert({ name, sort_order: 0 })
+    .select('id, name, sort_order, created_at')
+    .single()
+
+  if (error) throw new Error(`新增标签页失败：${error.message}`)
+  return data as Tab
+}
+
+/** 读取指定标签页下的问题：已解决置顶，组内按手动排序值升序 */
+export async function fetchBugs(tabId: string): Promise<Bug[]> {
   const { data, error } = await supabase
     .from('bugs')
-    .select('id, content, remark, attachments, sort_order, resolved, created_at')
+    .select('id, content, remark, attachments, sort_order, resolved, tab_id, created_at')
+    .eq('tab_id', tabId)
     .order('resolved', { ascending: false })
     .order('sort_order', { ascending: true })
     .order('created_at', { ascending: true })
@@ -34,7 +59,7 @@ function sanitizeFileName(name: string) {
  * 提交一条问题：先上传附件到 Storage，再写入数据库。
  * 若写库失败，会回滚已上传的附件，避免产生孤儿文件。
  */
-export async function createBug(content: string, files: File[]): Promise<void> {
+export async function createBug(content: string, files: File[], tabId: string): Promise<void> {
   const attachments: Attachment[] = []
 
   for (const file of files) {
@@ -57,7 +82,7 @@ export async function createBug(content: string, files: File[]): Promise<void> {
 
   const { error } = await supabase
     .from('bugs')
-    .insert({ content: content.trim(), attachments, sort_order: await nextSortOrder() })
+    .insert({ content: content.trim(), attachments, tab_id: tabId, sort_order: await nextSortOrder(tabId) })
 
   if (error) {
     if (attachments.length > 0) {
@@ -67,11 +92,12 @@ export async function createBug(content: string, files: File[]): Promise<void> {
   }
 }
 
-/** 计算下一条应使用的排序值 = 当前最大值 + 1（保证新记录排在最后） */
-async function nextSortOrder(): Promise<number> {
+/** 计算当前标签页下一条应使用的排序值 = 该页最大值 + 1（保证新记录排在最后） */
+async function nextSortOrder(tabId: string): Promise<number> {
   const { data, error } = await supabase
     .from('bugs')
     .select('sort_order')
+    .eq('tab_id', tabId)
     .order('sort_order', { ascending: false })
     .limit(1)
 

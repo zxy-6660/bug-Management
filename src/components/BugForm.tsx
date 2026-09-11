@@ -5,6 +5,7 @@ import { formatBytes } from '../lib/format'
 
 type Props = {
   onCreated: () => void
+  tabId: string | null
 }
 
 const IMAGE_EXT: Record<string, string> = {
@@ -46,7 +47,7 @@ function mergeFiles(prev: File[], incoming: File[]) {
   return merged
 }
 
-export default function BugForm({ onCreated }: Props) {
+export default function BugForm({ onCreated, tabId }: Props) {
   const [content, setContent] = useState('')
   const [files, setFiles] = useState<File[]>([])
   const [submitting, setSubmitting] = useState(false)
@@ -105,7 +106,7 @@ export default function BugForm({ onCreated }: Props) {
     setSuccess(false)
 
     try {
-      await createBug(content, files)
+      await createBug(content, files, tabId ?? '')
       setContent('')
       setFiles([])
       setSuccess(true)

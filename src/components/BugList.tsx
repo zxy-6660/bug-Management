@@ -9,13 +9,18 @@ import {
 } from '@dnd-kit/core'
 import { arrayMove, SortableContext, sortableKeyboardCoordinates, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import BugCard from './BugCard'
-import type { Bug, BugPatch } from '../types'
+import type { Bug, BugPatch, Tab } from '../types'
 
 type Props = {
+  tabs: Tab[]
+  activeTabId: string | null
+  maxTabs: number
   bugs: Bug[]
   loading: boolean
   error: string | null
   deletingId: string | null
+  onSelectTab: (id: string) => void
+  onCreateTab: () => void
   onRetry: () => void
   onDelete: (bug: Bug) => void
   onUpdate: (bug: Bug, patch: BugPatch) => Promise<boolean>
@@ -24,10 +29,15 @@ type Props = {
 }
 
 export default function BugList({
+  tabs,
+  activeTabId,
+  maxTabs,
   bugs,
   loading,
   error,
   deletingId,
+  onSelectTab,
+  onCreateTab,
   onRetry,
   onDelete,
   onUpdate,
@@ -58,6 +68,27 @@ export default function BugList({
       <div className="list-header">
         <h2 className="card-title">问题列表</h2>
         <span className="count-badge">{loading ? '加载中' : `${bugs.length} 条`}</span>
+      </div>
+
+      {/* 标签页栏 */}
+      <div className="tabs-bar" role="tablist">
+        {tabs.map((tab) => (
+          <button
+            key={tab.id}
+            type="button"
+            role="tab"
+            aria-selected={tab.id === activeTabId}
+            className={`tab-btn${tab.id === activeTabId ? ' active' : ''}`}
+            onClick={() => onSelectTab(tab.id)}
+          >
+            <span className="tab-name">{tab.name}</span>
+          </button>
+        ))}
+        {tabs.length < maxTabs && (
+          <button type="button" className="tab-btn add" title="新增标签页" onClick={onCreateTab}>
+            + 新增
+          </button>
+        )}
       </div>
 
       {loading && <div className="card placeholder">正在加载问题列表…</div>}

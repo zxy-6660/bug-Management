@@ -12,6 +12,15 @@ export type Bug = {
   attachments: Attachment[]
   sort_order: number
   resolved: boolean
+  tab_id: string | null
+  created_at: string
+}
+
+/** 问题标签页 */
+export type Tab = {
+  id: string
+  name: string
+  sort_order: number
   created_at: string
 }
 
