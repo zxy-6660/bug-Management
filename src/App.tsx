@@ -146,7 +146,8 @@ export default function App() {
   /** 删除标签页：仅空页可删，删除后若当前页被删则切到相邻页 */
   const handleDeleteTab = useCallback(
     async (id: string) => {
-      if ((tabCounts[id] ?? 1) > 0) {
+      // 注意用 ?? 0：tabCounts 只记录“有问题”的页，空页不存在即为 0，允许删除
+      if ((tabCounts[id] ?? 0) > 0) {
         setError('只能删除没有问题的标签页')
         return
       }
