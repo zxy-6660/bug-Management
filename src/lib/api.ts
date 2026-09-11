@@ -37,6 +37,30 @@ export async function updateTab(id: string, name: string): Promise<void> {
   if (!data || data.length === 0) throw new Error('重命名失败：记录不存在，或数据库缺少 update 策略')
 }
 
+/**
+ * 统计每个标签页下的问题数量，返回 { tabId: count }。
+ * 用于判断标签页是否为空（空页才允许删除）。
+ */
+export async function fetchTabCounts(): Promise<Record<string, number>> {
+  const { data, error } = await supabase.from('bugs').select('tab_id')
+
+  if (error) throw new Error(`加载计数失败：${error.message}`)
+
+  const counts: Record<string, number> = {}
+  for (const row of data ?? []) {
+    if (row.tab_id) counts[row.tab_id] = (counts[row.tab_id] ?? 0) + 1
+  }
+  return counts
+}
+
+/** 删除一个标签页（仅限空页，调用方负责核验） */
+export async function deleteTab(id: string): Promise<void> {
+  const { data, error } = await supabase.from('tabs').delete().eq('id', id).select('id')
+
+  if (error) throw new Error(`删除标签页失败：${error.message}`)
+  if (!data || data.length === 0) throw new Error('删除失败：记录不存在，或数据库缺少 delete 策略')
+}
+
 /** 读取指定标签页下的问题：已解决置顶，组内按手动排序值升序 */
 export async function fetchBugs(tabId: string): Promise<Bug[]> {
   const { data, error } = await supabase

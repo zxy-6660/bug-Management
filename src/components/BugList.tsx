@@ -14,6 +14,7 @@ import type { Bug, BugPatch, Tab } from '../types'
 
 type Props = {
   tabs: Tab[]
+  tabCounts: Record<string, number>
   activeTabId: string | null
   maxTabs: number
   bugs: Bug[]
@@ -23,6 +24,7 @@ type Props = {
   onSelectTab: (id: string) => void
   onCreateTab: () => void
   onRenameTab: (id: string, name: string) => Promise<boolean>
+  onDeleteTab: (id: string) => void
   onRetry: () => void
   onDelete: (bug: Bug) => void
   onUpdate: (bug: Bug, patch: BugPatch) => Promise<boolean>
@@ -32,6 +34,7 @@ type Props = {
 
 export default function BugList({
   tabs,
+  tabCounts,
   activeTabId,
   maxTabs,
   bugs,
@@ -41,6 +44,7 @@ export default function BugList({
   onSelectTab,
   onCreateTab,
   onRenameTab,
+  onDeleteTab,
   onRetry,
   onDelete,
   onUpdate,
@@ -123,18 +127,34 @@ export default function BugList({
               />
             </span>
           ) : (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={tab.id === activeTabId}
-              title="双击重命名"
-              className={`tab-btn${tab.id === activeTabId ? ' active' : ''}`}
-              onClick={() => onSelectTab(tab.id)}
-              onDoubleClick={() => startRename(tab)}
-            >
-              <span className="tab-name">{tab.name}</span>
-            </button>
+            <span key={tab.id} className="tab-item">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab.id === activeTabId}
+                title={
+                  (tabCounts[tab.id] ?? 0) > 0
+                    ? `含 ${tabCounts[tab.id]} 条，清空后才能删除；双击可重命名`
+                    : '双击可重命名'
+                }
+                className={`tab-btn${tab.id === activeTabId ? ' active' : ''}`}
+                onClick={() => onSelectTab(tab.id)}
+                onDoubleClick={() => startRename(tab)}
+              >
+                <span className="tab-name">{tab.name}</span>
+              </button>
+              {(tabCounts[tab.id] ?? 0) === 0 && (
+                <button
+                  type="button"
+                  className="tab-del"
+                  title="删除标签页（空页可删）"
+                  aria-label={`删除标签页 ${tab.name}`}
+                  onClick={() => onDeleteTab(tab.id)}
+                >
+                  ×
+                </button>
+              )}
+            </span>
           )
         )}
         {tabs.length < maxTabs && (

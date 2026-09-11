@@ -339,6 +339,36 @@ body {
   white-space: nowrap;
 }
 
+.tab-item {
+  position: relative;
+  display: inline-flex;
+}
+
+.tab-item .tab-del {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 50%;
+  background: #fff;
+  color: var(--danger);
+  font-size: 13px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.tab-item .tab-del:hover {
+  background: var(--danger);
+  color: #fff;
+  border-color: var(--danger);
+}
+
 .tab-rename {
   display: inline-flex;
 }

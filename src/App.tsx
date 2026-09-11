@@ -1,24 +1,26 @@
 import { useCallback, useEffect, useState } from 'react'
 import BugForm from './components/BugForm'
 import BugList from './components/BugList'
-import { createTab, deleteBug, fetchBugs, fetchTabs, reorderBugs, updateBug, updateTab } from './lib/api'
+import { createTab, deleteBug, deleteTab, fetchBugs, fetchTabCounts, fetchTabs, reorderBugs, updateBug, updateTab } from './lib/api'
 import type { Bug, BugPatch, Tab } from './types'
 
 export const MAX_TABS = 5
 
 export default function App() {
   const [tabs, setTabs] = useState<Tab[]>([])
+  const [tabCounts, setTabCounts] = useState<Record<string, number>>({})
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [bugs, setBugs] = useState<Bug[]>([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
   const [deletingId, setDeletingId] = useState<string | null>(null)
 
-  // 启动：加载标签页，并选中第一个
+  // 启动：加载标签页及计数，并选中第一个
   useEffect(() => {
-    fetchTabs()
-      .then((list) => {
+    Promise.all([fetchTabs(), fetchTabCounts()])
+      .then(([list, counts]) => {
         setTabs(list)
+        setTabCounts(counts)
         if (list.length > 0) setActiveTabId(list[0].id)
       })
       .catch((err) => setError(err instanceof Error ? err.message : '加载标签页失败'))
@@ -42,6 +44,13 @@ export default function App() {
     void load()
   }, [load])
 
+  /** 重算各标签页计数（提交/删除问题后调用） */
+  const refreshTabCounts = useCallback(() => {
+    fetchTabCounts()
+      .then(setTabCounts)
+      .catch(() => {}) // 计数失败不影响主流程
+  }, [])
+
   const handleDelete = useCallback(
     async (bug: Bug) => {
       setDeletingId(bug.id)
@@ -49,13 +58,14 @@ export default function App() {
       try {
         await deleteBug(bug)
         setBugs((prev) => prev.filter((b) => b.id !== bug.id))
+        refreshTabCounts()
       } catch (err) {
         setError(err instanceof Error ? err.message : '删除失败')
       } finally {
         setDeletingId(null)
       }
     },
-    []
+    [refreshTabCounts]
   )
 
   const handleUpdate = useCallback(async (bug: Bug, patch: BugPatch) => {
@@ -113,6 +123,7 @@ export default function App() {
       const name = `新标签页 ${tabs.length + 1}`
       const tab = await createTab(name)
       setTabs((prev) => [...prev, tab])
+      setTabCounts((prev) => ({ ...prev, [tab.id]: 0 }))
       setActiveTabId(tab.id)
     } catch (err) {
       setError(err instanceof Error ? err.message : '新增标签页失败')
@@ -132,6 +143,33 @@ export default function App() {
     }
   }, [])
 
+  /** 删除标签页：仅空页可删，删除后若当前页被删则切到相邻页 */
+  const handleDeleteTab = useCallback(
+    async (id: string) => {
+      if ((tabCounts[id] ?? 1) > 0) {
+        setError('只能删除没有问题的标签页')
+        return
+      }
+      setError(null)
+      try {
+        await deleteTab(id)
+        setTabs((prev) => {
+          const next = prev.filter((t) => t.id !== id)
+          if (activeTabId === id && next.length > 0) setActiveTabId(next[0].id)
+          return next
+        })
+        setTabCounts((prev) => {
+          const next = { ...prev }
+          delete next[id]
+          return next
+        })
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '删除标签页失败')
+      }
+    },
+    [tabCounts, activeTabId]
+  )
+
   return (
     <div className="page">
       <header className="page-header">
@@ -139,9 +177,10 @@ export default function App() {
       </header>
 
       <main className="layout">
-        <BugForm onCreated={load} tabId={activeTabId} />
+        <BugForm onCreated={() => { void load(); refreshTabCounts() }} tabId={activeTabId} />
         <BugList
           tabs={tabs}
+          tabCounts={tabCounts}
           activeTabId={activeTabId}
           maxTabs={MAX_TABS}
           bugs={bugs}
@@ -151,6 +190,7 @@ export default function App() {
           onSelectTab={setActiveTabId}
           onCreateTab={handleCreateTab}
           onRenameTab={handleRenameTab}
+          onDeleteTab={handleDeleteTab}
           onRetry={load}
           onDelete={handleDelete}
           onUpdate={handleUpdate}

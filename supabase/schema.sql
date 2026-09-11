@@ -103,6 +103,11 @@ create policy "tabs_update_public" on public.tabs
   using (true)
   with check (true);
 
+drop policy if exists "tabs_delete_public" on public.tabs;
+create policy "tabs_delete_public" on public.tabs
+  for delete to anon, authenticated
+  using (true);
+
 -- 7. 数据初始化：确保至少存在一个默认标签页 ---------------
 -- 若 tabs 为空则创建默认页「问题列表」，并把所有未归类的历史问题归入该页
 do $$
