@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   DndContext,
   PointerSensor,
@@ -21,6 +22,7 @@ type Props = {
   deletingId: string | null
   onSelectTab: (id: string) => void
   onCreateTab: () => void
+  onRenameTab: (id: string, name: string) => Promise<boolean>
   onRetry: () => void
   onDelete: (bug: Bug) => void
   onUpdate: (bug: Bug, patch: BugPatch) => Promise<boolean>
@@ -38,12 +40,16 @@ export default function BugList({
   deletingId,
   onSelectTab,
   onCreateTab,
+  onRenameTab,
   onRetry,
   onDelete,
   onUpdate,
   onToggleResolved,
   onReorder
 }: Props) {
+  const [editingTabId, setEditingTabId] = useState<string | null>(null)
+  const [renameDraft, setRenameDraft] = useState('')
+  const [renaming, setRenaming] = useState(false)
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
     useSensor(TouchSensor, {
@@ -63,6 +69,33 @@ export default function BugList({
     onReorder(arrayMove(bugs, from, to))
   }
 
+  function startRename(tab: Tab) {
+    setEditingTabId(tab.id)
+    setRenameDraft(tab.name)
+  }
+
+  function cancelRename() {
+    setEditingTabId(null)
+    setRenameDraft('')
+  }
+
+  async function commitRename() {
+    if (!editingTabId) return
+    const name = renameDraft.trim()
+    if (!name) {
+      cancelRename()
+      return
+    }
+    if (name === tabs.find((t) => t.id === editingTabId)?.name) {
+      cancelRename()
+      return
+    }
+    setRenaming(true)
+    const ok = await onRenameTab(editingTabId, name)
+    setRenaming(false)
+    if (ok) cancelRename()
+  }
+
   return (
     <section className="list-section">
       <div className="list-header">
@@ -72,18 +105,38 @@ export default function BugList({
 
       {/* 标签页栏 */}
       <div className="tabs-bar" role="tablist">
-        {tabs.map((tab) => (
-          <button
-            key={tab.id}
-            type="button"
-            role="tab"
-            aria-selected={tab.id === activeTabId}
-            className={`tab-btn${tab.id === activeTabId ? ' active' : ''}`}
-            onClick={() => onSelectTab(tab.id)}
-          >
-            <span className="tab-name">{tab.name}</span>
-          </button>
-        ))}
+        {tabs.map((tab) =>
+          editingTabId === tab.id ? (
+            <span key={tab.id} className="tab-rename">
+              <input
+                autoFocus
+                className="tab-rename-input"
+                value={renameDraft}
+                maxLength={20}
+                disabled={renaming}
+                onChange={(e) => setRenameDraft(e.target.value)}
+                onBlur={() => void commitRename()}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') void commitRename()
+                  if (e.key === 'Escape') cancelRename()
+                }}
+              />
+            </span>
+          ) : (
+            <button
+              key={tab.id}
+              type="button"
+              role="tab"
+              aria-selected={tab.id === activeTabId}
+              title="双击重命名"
+              className={`tab-btn${tab.id === activeTabId ? ' active' : ''}`}
+              onClick={() => onSelectTab(tab.id)}
+              onDoubleClick={() => startRename(tab)}
+            >
+              <span className="tab-name">{tab.name}</span>
+            </button>
+          )
+        )}
         {tabs.length < maxTabs && (
           <button type="button" className="tab-btn add" title="新增标签页" onClick={onCreateTab}>
             + 新增

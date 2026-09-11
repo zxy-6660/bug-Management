@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import BugForm from './components/BugForm'
 import BugList from './components/BugList'
-import { createTab, deleteBug, fetchBugs, fetchTabs, reorderBugs, updateBug } from './lib/api'
+import { createTab, deleteBug, fetchBugs, fetchTabs, reorderBugs, updateBug, updateTab } from './lib/api'
 import type { Bug, BugPatch, Tab } from './types'
 
 export const MAX_TABS = 5
@@ -119,6 +119,19 @@ export default function App() {
     }
   }, [tabs.length])
 
+  /** 重命名标签页 */
+  const handleRenameTab = useCallback(async (id: string, name: string) => {
+    setError(null)
+    try {
+      await updateTab(id, name)
+      setTabs((prev) => prev.map((t) => (t.id === id ? { ...t, name } : t)))
+      return true
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '重命名失败')
+      return false
+    }
+  }, [])
+
   return (
     <div className="page">
       <header className="page-header">
@@ -137,6 +150,7 @@ export default function App() {
           deletingId={deletingId}
           onSelectTab={setActiveTabId}
           onCreateTab={handleCreateTab}
+          onRenameTab={handleRenameTab}
           onRetry={load}
           onDelete={handleDelete}
           onUpdate={handleUpdate}

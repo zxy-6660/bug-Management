@@ -25,6 +25,18 @@ export async function createTab(name: string): Promise<Tab> {
   return data as Tab
 }
 
+/** 重命名标签页 */
+export async function updateTab(id: string, name: string): Promise<void> {
+  const { data, error } = await supabase
+    .from('tabs')
+    .update({ name })
+    .eq('id', id)
+    .select('id')
+
+  if (error) throw new Error(`重命名失败：${error.message}`)
+  if (!data || data.length === 0) throw new Error('重命名失败：记录不存在，或数据库缺少 update 策略')
+}
+
 /** 读取指定标签页下的问题：已解决置顶，组内按手动排序值升序 */
 export async function fetchBugs(tabId: string): Promise<Bug[]> {
   const { data, error } = await supabase
